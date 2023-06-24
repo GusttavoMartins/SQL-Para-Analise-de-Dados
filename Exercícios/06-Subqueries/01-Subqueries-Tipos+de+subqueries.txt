@@ -1,0 +1,74 @@
+-- PARA QUE SERVE ##################################################################
+-- Servem para consultar dados de outras consultas.
+
+
+-- TIPOS ###########################################################################
+-- Subquery no WHERE
+-- Subquery com WITH
+-- Subquery no FROM
+-- Subquery no SELECT
+
+
+-- EXEMPLOS ########################################################################
+
+-- (Exemplo 1) Subquery no WHERE
+-- Informe qual é o veículo mais barato da tabela products
+select *
+from sales.products as pd
+where pd.price = (select min(pd.price) from sales.products as pd)
+
+
+-- (Exemplo 2) Subquery com WITH
+-- Calcule a idade média dos clientes por status profissional
+with alguma_tabela as (
+select
+	cus.professional_status,
+	(CURRENT_DATE - cus.birth_date)/365 as idade
+from sales.customers as cus
+)
+
+select 
+	altb.professional_status,
+	avg(idade) as idade_media
+from alguma_tabela as altb
+group by professional_status
+
+-- (Exemplo 3) Subquery no FROM
+-- Calcule a média de idades dos clientes por status profissional
+select 
+	professional_status,
+	avg(idade) as idade_media
+from(
+	select 
+		professional_status,
+		(CURRENT_DATE - birth_date)/365 as idade
+	from sales.customers 
+) as alguma_colunaa
+group by professional_status
+
+
+-- (Exemplo 4) Subquery no SELECT
+-- Na tabela sales.funnel crie uma coluna que informe o nº de visitas acumuladas 
+-- que a loja visitada recebeu até o momento
+select
+	fun.visit_id,
+	fun.visit_page_date,
+	st.store_name,
+	(
+		select count(*)
+		from sales.funnel as fun2
+		where fun2.visit_page_date <= fun.visit_page_date
+		and fun2.store_id = fun.store_id
+	)
+from sales.funnel as fun
+left join sales.stores as st
+	on st.store_id = fun.store_id
+order by st.store_name, fun.visit_page_date
+
+
+-- RESUMO ##########################################################################
+-- (1) Servem para consultar dados de outras consultas.
+-- (2) Para que as subqueries no WHERE e no SELECT funcionem, elas devem retornar 
+-- apenas um único valor
+-- (3) Não é recomendado utilizar subqueries diretamente dentro do FROM pois isso 
+-- dificulta a legibilidade da query. 
